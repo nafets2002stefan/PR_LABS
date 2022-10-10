@@ -1,35 +1,26 @@
-import threading
-import time
+#Server 3
 
-from flask import Flask, request, jsonify
+import threading
+from flask import Flask
 import queue
-import requests
+
+from Lab2 import utils
+
+NR_OF_THREADS_TO_SEND = 2
+URL_FOR_SERVER2 = "http://127.0.0.1:5002/recieve_from_server3"
+consumer_queue = queue.Queue(5)
+
+def send_foods_to_server2():
+    utils.send_foods_to_server(2, consumer_queue, URL_FOR_SERVER2)
+
+extractors = [threading.Thread(target=send_foods_to_server2, daemon=True) for i in range(NR_OF_THREADS_TO_SEND)]
 
 
 app = Flask(__name__)
 
-NR_OF_THREADS_TO_SEND = 2
-
-consumer_queue = queue.Queue(5)
-
-def send_foods_back_to_server2():
-    while True:
-        time.sleep(3)
-
-        if not(consumer_queue.empty()):
-            food = consumer_queue.get()
-            requests.post("http://127.0.0.1:5002/recieve_from_server3", json=food)
-            print(f"Item {food['id']} has been sent to server2")
-
-
 @app.route('/consumer', methods=['POST'])
 def recieve_order():
-    order = request.json
-    consumer_queue.put(order)
-    print(f"Recieved order {order['id']} from server2")
-    return jsonify(order)
-
-extractors = [threading.Thread(target=send_foods_back_to_server2, daemon=True) for i in range(NR_OF_THREADS_TO_SEND)]
+    return utils.recieve_order_from_server(2, consumer_queue)
 
 if __name__ == '__main__':
     for thread in extractors:
