@@ -13,13 +13,28 @@ NR_OF_THREADS_TO_SEND = 5
 app = Flask(__name__)
 menu = MenuList()
 
-# Sends item to kitchen server
+mutex = threading.Lock()
+
+items_sent = 0
+items_recieved = 0
+
+
 def send_foods_to_kitchen():
+    global items_sent
+
     while True:
-        time.sleep(3)
+        if (items_sent - items_recieved > 5):
+            time.sleep(3)
+            continue
+
+        mutex.acquire()
+        time.sleep(1)
+
         menu_item = create_random_food()
         if requests.post('http://127.0.0.1:5000/order', json=menu_item):
+            items_sent += 1
             print(f'Item {menu_item["id"]} has been sent to kitchen')
+        mutex.release()
 
 # Generates a random food item from menu list
 def create_random_food():
@@ -29,8 +44,11 @@ def create_random_food():
 # Recieves foods which we were sent to kitchen
 @app.route('/foods', methods=['POST'])
 def recieve_order_from_kitchen():
+
+    global items_recieved
     order = request.json
     print(f"Recieved order {order['id']} from Kitchen.")
+    items_recieved += 1
     return order
 
 # Create a list of threads and each of them runs function

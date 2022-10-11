@@ -23,12 +23,13 @@ def send_foods_to_server3():
 
 app = Flask(__name__)
 
-@app.route('/recieve_from_server1', methods=['POST'])
-def recieve_order_from_server_1():
-    return utils.recieve_order_from_server(1, producer_queue)
 @app.route('/recieve_from_server3', methods=['POST'])
 def recieve_order_from_server_3():
     return utils.recieve_order_from_server(3, consumer_queue)
+
+@app.route('/recieve_from_server1', methods=['POST'])
+def recieve_order_from_server_1():
+    return utils.recieve_order_from_server(1, producer_queue)
 
 # Create a list of threads and each of them runs a function
 producers = [threading.Thread(target=send_foods_to_server3, daemon=True) for i in range(NR_OF_THREADS_TO_SEND)]
